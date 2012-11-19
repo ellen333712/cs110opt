@@ -6,9 +6,9 @@
 void *Fileops_init(char *diskpath);
 int Fileops_open(char *pathname);
 int Fileops_read(int fd, char *buffer, int length);
-int Fileops_getinumber(int fd);
+int Fileops_getinumber(int fd, int *size);
 int Fileops_getcursor(int fd);
-int Fileops_getchar(int fd, int inum);
+int Fileops_getchar(int fd, int inum, int size);
 int Fileops_tell(int fd);
 int Fileops_close(int fd);
 int Fileops_isfile(char *pathname);

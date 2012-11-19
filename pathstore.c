@@ -117,6 +117,8 @@ SameFileIsInStore(Pathstore *store, char *pathname)
 static int
 IsSameFile(Pathstore *store, char *pathname1, char *pathname2)
 {
+  int size1 = 0; 
+  int size2 = 0;
 
   char chksum1[CHKSUMFILE_SIZE],
        chksum2[CHKSUMFILE_SIZE];
@@ -160,8 +162,9 @@ IsSameFile(Pathstore *store, char *pathname1, char *pathname2)
   }
 
   int ch1, ch2;
-  int inum1 = Fileops_getinumber(fd1);
-  int inum2 = Fileops_getinumber(fd2);
+  int inum1 = Fileops_getinumber(fd1, &size1);
+  int inum2 = Fileops_getinumber(fd2, &size2);
+  printf ("Size 1: %d and size 2: %d\n", size1, size2);
   if(inum1 < 0 || inum2 < 0) 
   {
     Fileops_close(fd1);
@@ -171,8 +174,8 @@ IsSameFile(Pathstore *store, char *pathname1, char *pathname2)
   }
 
   do {
-    ch1 = Fileops_getchar(fd1, inum1);
-    ch2 = Fileops_getchar(fd2, inum2);
+    ch1 = Fileops_getchar(fd1, inum1, size1);
+    ch2 = Fileops_getchar(fd2, inum2, size2);
 
     if (ch1 != ch2) {
       break; // Mismatch - exit loop with ch1 != ch2

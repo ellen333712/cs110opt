@@ -88,11 +88,11 @@ Fileops_open(char *pathname)
  * is within the file.
  */
 int
-Fileops_getinumber(int fd)
+Fileops_getinumber(int fd, int *size)
 {
   int inumber;
   struct inode in;
-  int err, size;
+  int err;
 
   inumber = pathname_lookup(unixfs, openFileTable[fd].pathname);
   if (inumber < 0) {
@@ -107,9 +107,9 @@ Fileops_getinumber(int fd)
     return -1;
   }
 
-  size = inode_getsize(&in);
+  *size = inode_getsize(&in);
 
-  if (openFileTable[fd].cursor >= size) return -1; // Finished with file
+  //if (openFileTable[fd].cursor >= size) return -1; // Finished with file
 
   return inumber;
 }
@@ -118,7 +118,7 @@ Fileops_getinumber(int fd)
  * Fetch the next character from the file. Return -1 if at end of file.
  */
 int
-Fileops_getchar(int fd, int inum)
+Fileops_getchar(int fd, int inum, int size)
 {
   //int inumber;
   //struct inode in;
@@ -146,9 +146,9 @@ Fileops_getchar(int fd, int inum)
   }
 
   size = inode_getsize(&in);
-
-  if (openFileTable[fd].cursor >= size) return -1; // Finished with file
 */
+  if (openFileTable[fd].cursor >= size) return -1; // Finished with file
+
   blockNo = openFileTable[fd].cursor / DISKIMG_SECTOR_SIZE;
   blockOffset =  openFileTable[fd].cursor % DISKIMG_SECTOR_SIZE;
 
@@ -173,14 +173,17 @@ Fileops_read(int fd, char *buffer, int length)
 {
   int i;
   int ch;
+  int size = 0;
 
   numreads++;
 
-  int inumber = Fileops_getinumber(fd);
+  int inumber = Fileops_getinumber(fd, &size);
+  printf ("Size: %d\n", size);  
+
   if(inumber < 0) return 0;
 
   for (i = 0; i < length; i++) {
-    ch = Fileops_getchar(fd, inumber);
+    ch = Fileops_getchar(fd, inumber, size);
     if (ch == -1) break;
     buffer[i] = ch;
   }
