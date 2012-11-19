@@ -160,10 +160,19 @@ IsSameFile(Pathstore *store, char *pathname1, char *pathname2)
   }
 
   int ch1, ch2;
+  int inum1 = Fileops_getinumber(fd1);
+  int inum2 = Fileops_getinumber(fd2);
+  if(inum1 < 0 || inum2 < 0) 
+  {
+    Fileops_close(fd1);
+    Fileops_close(fd2);
+    fprintf(stderr, "Can't retrieve valid inumber\n");
+    return 0;
+  }
 
   do {
-    ch1 = Fileops_getchar(fd1);
-    ch2 = Fileops_getchar(fd2);
+    ch1 = Fileops_getchar(fd1, inum1);
+    ch2 = Fileops_getchar(fd2, inum2);
 
     if (ch1 != ch2) {
       break; // Mismatch - exit loop with ch1 != ch2
