@@ -10,6 +10,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "diskimg.h"
 #include "index.h"
 #include "fileops.h"
 #include "pathstore.h"
@@ -123,6 +124,9 @@ IsSameFile(Pathstore *store, char *pathname1, char *pathname2)
   char chksum1[CHKSUMFILE_SIZE],
        chksum2[CHKSUMFILE_SIZE];
 
+  unsigned char buf1[DISKIMG_SECTOR_SIZE];
+  unsigned char buf2[DISKIMG_SECTOR_SIZE];
+
   struct unixfilesystem *fs = (struct unixfilesystem *) (store->fshandle);
 
   numcompares++;
@@ -173,9 +177,15 @@ IsSameFile(Pathstore *store, char *pathname1, char *pathname2)
     return 0;
   }
 
+  int blockNo1 = Fileops_getblockno(fd1);
+  int blockNo2 = Fileops_getblockno(fd2);
+  int bytesMoved1 = Fileops_getblock(inum1, blockNo1, buf1);
+  int bytesMoved2 = Fileops_getblock(inum2, blockNo2, buf2);
+
+
   do {
-    ch1 = Fileops_getchar(fd1, inum1, size1);
-    ch2 = Fileops_getchar(fd2, inum2, size2);
+    ch1 = Fileops_getchar(fd1, inum1, size1, buf1, &bytesMoved1);
+    ch2 = Fileops_getchar(fd2, inum2, size2, buf2, &bytesMoved2);
 
     if (ch1 != ch2) {
       break; // Mismatch - exit loop with ch1 != ch2

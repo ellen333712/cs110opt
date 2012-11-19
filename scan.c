@@ -12,6 +12,7 @@
 #include <inttypes.h> // for PRIu64
 
 #include "index.h"
+#include "diskimg.h"
 #include "fileops.h"
 #include "scan.h"
 #include "debug.h"
@@ -54,13 +55,17 @@ Scan_File(char *inpathname, Index *ind, Pathstore *store, int discardDups)
   int inum = Fileops_getinumber(fd, &size);
   printf("Size: %d\n", size);
   if(inum < 0) {Fileops_close(fd); return 0; }
+  unsigned char buf[DISKIMG_SECTOR_SIZE];
+  int blockNo = Fileops_getblockno(fd);
+  int bytesMoved = Fileops_getblock(inum, blockNo, buf);
 
-  int ch = Fileops_getchar(fd, inum, size);
+
+  int ch = Fileops_getchar(fd, inum, size, buf, &bytesMoved);
   numchars++;
 
   while (!(ch < 0)) {   // Process words until we reach the end of the file
     while (!isalpha(ch)) {    // Skip any leading non-alpha characters
-      ch = Fileops_getchar(fd, inum, size);
+      ch = Fileops_getchar(fd, inum, size, buf, &bytesMoved);
       if (ch < 0) {Fileops_close(fd); return 0; }
       numchars++;
     }
@@ -72,7 +77,7 @@ Scan_File(char *inpathname, Index *ind, Pathstore *store, int discardDups)
     char word[MAX_WORD_SIZE+1];
     while ((pos < MAX_WORD_SIZE) && !(ch < 0) && isalpha(ch)) {
       word[pos++] = ch;
-      ch = Fileops_getchar(fd, inum, size);
+      ch = Fileops_getchar(fd, inum, size, buf, &bytesMoved);
       numchars++;
     }
     numwords++;

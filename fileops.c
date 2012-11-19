@@ -115,14 +115,32 @@ Fileops_getinumber(int fd, int *size)
 }
 
 /*
+ * Returns the block number for the given part of the desired file.
+ */
+int
+Fileops_getblockno(int fd)
+{
+  return openFileTable[fd].cursor / DISKIMG_SECTOR_SIZE;
+}
+
+/*
+ * Updates the file block to the correct block.
+ */
+int 
+Fileops_getblock(int inum, int blockNo, unsigned char *buf)
+{
+  return file_getblock(unixfs, inum,blockNo,buf);
+}
+
+/*
  * Fetch the next character from the file. Return -1 if at end of file.
  */
 int
-Fileops_getchar(int fd, int inum, int size)
+Fileops_getchar(int fd, int inum, int size, unsigned char *buf, int *bm)
 {
   //int inumber;
   //struct inode in;
-  unsigned char buf[DISKIMG_SECTOR_SIZE];
+  //unsigned char buf[DISKIMG_SECTOR_SIZE];
   int bytesMoved;
   //int err, size;
   int blockNo, blockOffset;
@@ -152,7 +170,13 @@ Fileops_getchar(int fd, int inum, int size)
   blockNo = openFileTable[fd].cursor / DISKIMG_SECTOR_SIZE;
   blockOffset =  openFileTable[fd].cursor % DISKIMG_SECTOR_SIZE;
 
-  bytesMoved = file_getblock(unixfs, inum,blockNo,buf);
+  if(blockOffset == 0)
+  {
+    bytesMoved = Fileops_getblock(inum, blockNo, buf);
+    *bm = bytesMoved;
+  }
+  else bytesMoved = *bm;
+
   if (bytesMoved < 0) {
     return -1;
   }
@@ -182,8 +206,12 @@ Fileops_read(int fd, char *buffer, int length)
 
   if(inumber < 0) return 0;
 
+  int blockNo = Fileops_getblockno(fd);
+  unsigned char buf[DISKIMG_SECTOR_SIZE];
+  int bytesMoved = Fileops_getblock(inumber, blockNo, buf);
+
   for (i = 0; i < length; i++) {
-    ch = Fileops_getchar(fd, inumber, size);
+    ch = Fileops_getchar(fd, inumber, size, buf, &bytesMoved);
     if (ch == -1) break;
     buffer[i] = ch;
   }
